@@ -1,0 +1,5 @@
+export const CACHE = {
+  CACHE_1_MINUTES: 60,
+  CACHE_5_MINUTES: 300,
+  CACHE_10_MINUTES: 600,
+};
