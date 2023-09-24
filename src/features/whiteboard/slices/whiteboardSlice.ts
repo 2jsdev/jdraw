@@ -1,6 +1,9 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { Action, actions, Tool, tools } from "../../../constants";
 import { Element, ElementUpdateProps, Point } from "../domain/Element";
+import ElementFactory from "../domain/ElementFactory";
+
+const elementFactory = new ElementFactory();
 
 type WhiteboardState = {
   canvasSize: { width: number; height: number };
@@ -57,6 +60,22 @@ const whiteboardSlice = createSlice({
       const elementAction = state.action;
 
       switch (props.type) {
+        case tools.RECTANGLE:
+        case tools.DIAMOND:
+        case tools.ELLIPSE:
+        case tools.ARROW:
+        case tools.LINE: {
+          const updatedElement = elementFactory.createElement({
+            id: props.id,
+            x1: props.x1,
+            y1: props.y1,
+            x2: props.x2,
+            y2: props.y2,
+            type: props.type,
+          });
+          elementsCopy[props.index] = updatedElement;
+          break;
+        }
         case tools.TEXT: {
           elementsCopy[props.index].x1 = props.x1;
           elementsCopy[props.index].y1 = props.y1;

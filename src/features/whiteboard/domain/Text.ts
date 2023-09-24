@@ -49,6 +49,8 @@ class Text implements Element {
 
     this.lines = (this.text || "").split("\n");
 
+    context.fillStyle = "#000000";
+
     let offsetY = 0;
     for (const line of this.lines) {
       context.fillText(line, this.x1, this.y1 + offsetY + this.fontSize);

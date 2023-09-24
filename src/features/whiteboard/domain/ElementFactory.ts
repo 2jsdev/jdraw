@@ -5,8 +5,13 @@ import { ElementProps, Element, Point, PositionState } from "./Element";
 import { tools } from "../../../constants";
 import { getCursorForElement, getTextDimensions } from "../utils";
 
-import Text from "./Text";
+import Line from "./Line";
+import Rectangle from "./Rectangle";
 import Pencil from "./Pencil";
+import Diamond from "./Diamond";
+import Ellipse from "./Ellipse";
+import Arrow from "./Arrow";
+import Text from "./Text";
 
 const LINE_COLOR = "#8f8cff";
 const WHITE_COLOR = "#ffffff";
@@ -25,12 +30,26 @@ class ElementFactory {
     let element: Element;
 
     switch (props.type) {
-      case tools.TEXT:
-        element = new Text(props);
+      case tools.RECTANGLE:
+        element = new Rectangle(props);
         break;
-
+      case tools.LINE:
+        element = new Line(props);
+        break;
       case tools.PENCIL:
         element = new Pencil(props);
+        break;
+      case tools.DIAMOND:
+        element = new Diamond(props);
+        break;
+      case tools.ELLIPSE:
+        element = new Ellipse(props);
+        break;
+      case tools.ARROW:
+        element = new Arrow(props);
+        break;
+      case tools.TEXT:
+        element = new Text(props);
         break;
 
       default:
@@ -60,6 +79,19 @@ class ElementFactory {
     context: CanvasRenderingContext2D;
     element: Element;
   }) {
+    context.save();
+    context.strokeStyle = LINE_COLOR;
+    context.lineWidth = LINE_HEIGHT;
+
+    let x, y, width, height;
+
+    const drawControlPoint = (x: number, y: number) => {
+      context.beginPath();
+      context.arc(x, y, CONTROL_POINT_SIZE / 2, 0, 2 * Math.PI);
+      context.stroke();
+      context.fill();
+    };
+
     switch (element.type) {
       case tools.TEXT: {
         const { width, height } = getTextDimensions(element as Text, context);
@@ -134,13 +166,6 @@ class ElementFactory {
         context.strokeStyle = LINE_COLOR;
         context.lineWidth = LINE_HEIGHT;
 
-        const drawControlPoint = (x: number, y: number) => {
-          context.beginPath();
-          context.arc(x, y, CONTROL_POINT_SIZE / 2, 0, 2 * Math.PI);
-          context.stroke();
-          context.fill();
-        };
-
         drawControlPoint(x, y);
         drawControlPoint(x + width, y);
         drawControlPoint(x, y + height);
@@ -150,9 +175,28 @@ class ElementFactory {
 
         break;
       }
-      default:
-        throw new Error("Unknown element type");
+      default: {
+        x = Math.min(element.x1, element.x2) - OFFSET;
+        y = Math.min(element.y1, element.y2) - OFFSET;
+        width = Math.abs(element.x2 - element.x1) + 2 * OFFSET;
+        height = Math.abs(element.y2 - element.y1) + 2 * OFFSET;
+
+        context.strokeRect(x, y, width, height);
+
+        context.setLineDash([]);
+        context.fillStyle = WHITE_COLOR;
+        context.strokeStyle = LINE_COLOR;
+        context.lineWidth = LINE_HEIGHT;
+
+        drawControlPoint(x, y);
+        drawControlPoint(x + width, y);
+        drawControlPoint(x, y + height);
+        drawControlPoint(x + width, y + height);
+
+        context.restore();
+      }
     }
+    context.restore();
   }
 
   getElementAtPosition(

@@ -54,6 +54,7 @@ class Pencil implements Element {
 
     const pathData = getSvgPathFromStroke(myStroke);
     const path = new Path2D(pathData);
+    context.fillStyle = "#000000";
     context.fill(path);
   }
 

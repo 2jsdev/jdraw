@@ -3,11 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { setTool } from "../slices/whiteboardSlice";
 
 import selectionIcon from "../../../assets/selection.svg";
-// import rectangleIcon from "../../../assets/rectangle.svg";
-// import diamondIcon from "../../../assets/diamond.svg";
-// import ellipseIcon from "../../../assets/ellipse.svg";
-// import arrowIcon from "../../../assets/arrow.svg";
-// import lineIcon from "../../../assets/line.svg";
+import rectangleIcon from "../../../assets/rectangle.svg";
+import diamondIcon from "../../../assets/diamond.svg";
+import ellipseIcon from "../../../assets/ellipse.svg";
+import arrowIcon from "../../../assets/arrow.svg";
+import lineIcon from "../../../assets/line.svg";
 import pencilIcon from "../../../assets/draw.svg";
 import textIcon from "../../../assets/text.svg";
 // import insertImageIcon from "../../../assets/insert_image.svg";
@@ -18,11 +18,11 @@ import { RootState } from "../../../store";
 
 const iconMap = {
     [tools.SELECTION]: selectionIcon,
-    // [tools.RECTANGLE]: rectangleIcon,
-    // [tools.DIAMOND]: diamondIcon,
-    // [tools.ELLIPSE]: ellipseIcon,
-    // [tools.ARROW]: arrowIcon,
-    // [tools.LINE]: lineIcon,
+    [tools.RECTANGLE]: rectangleIcon,
+    [tools.DIAMOND]: diamondIcon,
+    [tools.ELLIPSE]: ellipseIcon,
+    [tools.ARROW]: arrowIcon,
+    [tools.LINE]: lineIcon,
     [tools.PENCIL]: pencilIcon,
     [tools.TEXT]: textIcon,
     // [tools.INSERT_IMAGE]: insertImageIcon,

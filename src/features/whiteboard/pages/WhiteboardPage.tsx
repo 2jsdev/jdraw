@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux';
 
 import rough from "roughjs";
@@ -92,7 +92,7 @@ const WhiteboardPage = (): React.ReactElement => {
             }
         }
 
-        if (tool === tools.PENCIL) {
+        if (tool === tools.PENCIL || tool === tools.RECTANGLE || tool === tools.ELLIPSE || tool === tools.DIAMOND || tool === tools.ARROW || tool === tools.LINE) {
             const element = elementFactory.createElement({
                 id: uuid(), type: tool, x1: clientX, y1: clientY, x2: clientX, y2: clientY,
             });
@@ -173,6 +173,85 @@ const WhiteboardPage = (): React.ReactElement => {
             }
 
             if (action === actions.RESIZING && selectedCorner) {
+                if (type === tools.RECTANGLE || type === tools.DIAMOND || type === tools.ELLIPSE) {
+                    const newDimensions = { newX1: x1, newY1: y1, newX2: x2, newY2: y2 };
+
+                    switch (selectedCorner) {
+                        case 'top-left':
+                            newDimensions.newX1 = Math.min(clientX, x2);
+                            newDimensions.newY1 = Math.min(clientY, y2);
+                            break;
+                        case 'top-right':
+                            newDimensions.newX2 = Math.max(clientX, x1);
+                            newDimensions.newY1 = Math.min(clientY, y2);
+                            break;
+                        case 'bottom-left':
+                            newDimensions.newX1 = Math.min(clientX, x2);
+                            newDimensions.newY2 = Math.max(clientY, y1);
+                            break;
+                        case 'bottom-right':
+                            newDimensions.newX2 = Math.max(clientX, x1);
+                            newDimensions.newY2 = Math.max(clientY, y1);
+                            break;
+                        default:
+                            console.warn('Esquina desconocida:', selectedCorner);
+                    }
+
+                    dispatch(updateElement({
+                        props: {
+                            id,
+                            type,
+                            x1: newDimensions.newX1,
+                            y1: newDimensions.newY1,
+                            x2: newDimensions.newX2,
+                            y2: newDimensions.newY2,
+                            index
+                        },
+                        context: contextRef.current as CanvasRenderingContext2D
+                    }));
+                }
+
+                if (type === tools.ARROW || type === tools.LINE) {
+                    let newX1 = x1;
+                    let newY1 = y1;
+                    let newX2 = x2;
+                    let newY2 = y2;
+
+                    switch (selectedCorner) {
+                        case 'top-left':
+                            newX1 = clientX;
+                            newY1 = clientY;
+                            break;
+                        case 'bottom-right':
+                            newX2 = clientX;
+                            newY2 = clientY;
+                            break;
+                        case 'top-right':
+                            newY1 = clientY;
+                            newX2 = clientX;
+                            break;
+                        case 'bottom-left':
+                            newY2 = clientY;
+                            newX1 = clientX;
+                            break;
+                        default:
+                            console.warn('Esquina desconocida:', selectedCorner);
+                    }
+
+                    dispatch(updateElement({
+                        props: {
+                            id,
+                            type,
+                            x1: newX1,
+                            y1: newY1,
+                            x2: newX2,
+                            y2: newY2,
+                            index
+                        },
+                        context: contextRef.current as CanvasRenderingContext2D
+                    }));
+                }
+
                 if (type === tools.PENCIL) {
                     if (!points) return;
 
