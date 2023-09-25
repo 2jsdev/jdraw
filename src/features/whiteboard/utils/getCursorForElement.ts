@@ -60,21 +60,6 @@ const isPointInsideRectangle = (
   return x > minX && x < maxX && y > minY && y < maxY;
 };
 
-const adjustForSelectionBox = (
-  minX: number,
-  minY: number,
-  maxX: number,
-  maxY: number,
-  offset: number
-) => {
-  return {
-    minX: minX - offset,
-    minY: minY - offset,
-    maxX: maxX + offset,
-    maxY: maxY + offset,
-  };
-};
-
 export const getCursorForElement = (
   x: number,
   y: number,

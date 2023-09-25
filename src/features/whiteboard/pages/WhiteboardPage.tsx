@@ -10,8 +10,9 @@ import { RootState } from '../../../store';
 import ElementFactory from '../domain/ElementFactory';
 import Menu from "../components/Menu"
 import { actions, tools } from '../../../constants';
-import { addElement, setAction, setCanvasSize, setSelectedElement, setTool, updateElement } from '../slices/whiteboardSlice';
+import { addElement, deleteElement, setAction, setCanvasSize, setSelectedElement, setTool, updateElement } from '../slices/whiteboardSlice';
 import { getResizedDimensions, getScaleFactor, updateCursorForPosition } from '../utils';
+import { getCursorForElement } from '../utils/getCursorForElement';
 
 const elementFactory = new ElementFactory();
 
@@ -116,6 +117,32 @@ const WhiteboardPage = (): React.ReactElement => {
             dispatch(setAction(actions.WRITING));
             dispatch(setSelectedElement(element));
         }
+
+        if (tool === tools.ERASER) {
+            const cursorPosition = { x: clientX, y: clientY };
+            const eraserRadius = 5;
+            const numPoints = 25;
+
+            const pointsAroundCircle = Array.from({ length: numPoints }, (_, i) => {
+                const angle = (i * 2 * Math.PI) / numPoints;
+                return {
+                    x: cursorPosition.x + eraserRadius * Math.cos(angle),
+                    y: cursorPosition.y + eraserRadius * Math.sin(angle),
+                };
+            });
+
+            outerLoop:
+            for (const point of pointsAroundCircle) {
+                for (const [index, element] of elements.entries()) {
+                    if (getCursorForElement(point.x, point.y, element, contextRef.current as CanvasRenderingContext2D) === "inside") {
+                        dispatch(deleteElement(index));
+                        break outerLoop;
+                    }
+                }
+            }
+        }
+
+
     }
 
     const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -194,7 +221,7 @@ const WhiteboardPage = (): React.ReactElement => {
                             newDimensions.newY2 = Math.max(clientY, y1);
                             break;
                         default:
-                            console.warn('Esquina desconocida:', selectedCorner);
+                            break;
                     }
 
                     dispatch(updateElement({
@@ -235,7 +262,7 @@ const WhiteboardPage = (): React.ReactElement => {
                             newX1 = clientX;
                             break;
                         default:
-                            console.warn('Esquina desconocida:', selectedCorner);
+                            break;
                     }
 
                     dispatch(updateElement({
@@ -341,9 +368,11 @@ const WhiteboardPage = (): React.ReactElement => {
     const handleMouseUp = (event: React.MouseEvent<HTMLCanvasElement>) => {
         if (action === actions.WRITING) return;
 
-        dispatch(setTool(tools.SELECTION));
-        dispatch(setAction(actions.SELECTING));
-        updateCursorForPosition(event.target as HTMLElement, "outside");
+        if (tool !== tools.ERASER) {
+            dispatch(setTool(tools.SELECTION));
+            dispatch(setAction(actions.SELECTING));
+            updateCursorForPosition(event.target as HTMLElement, "outside");
+        }
     };
 
     const handleTextareaBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
@@ -494,6 +523,7 @@ const WhiteboardPage = (): React.ReactElement => {
                 onDoubleClick={handleDoubleClick}
                 width={canvasSize.width}
                 height={canvasSize.height}
+                className={tool}
             />
         </>
     )

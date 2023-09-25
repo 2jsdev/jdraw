@@ -131,3 +131,23 @@ canvas {
   min-height: 16px;
   line-height: 1;
 }
+
+.SELECTION {
+  cursor: default;
+}
+
+.RECTANGLE,
+.DIAMOND,
+.ELLIPSE,
+.ARROW,
+.LINE,
+.PENCIL,
+.TEXT {
+  cursor: crosshair !important;
+}
+
+/* Y también puedes añadir una clase para el ERASER si necesitas un cursor diferente para ello */
+
+.ERASER {
+  cursor: url("src/assets/eraser-cursor.svg") 16 16, auto !important; /* 16 16 son las coordenadas x y y del punto caliente del cursor */
+}

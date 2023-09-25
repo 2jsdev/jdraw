@@ -105,6 +105,12 @@ const whiteboardSlice = createSlice({
 
       state.elements = elementsCopy;
     },
+    deleteElement: (state, action: PayloadAction<number>) => {
+      const index = action.payload;
+      const elementsCopy = [...state.elements];
+      elementsCopy.splice(index, 1);
+      state.elements = elementsCopy;
+    },
   },
 });
 
@@ -116,6 +122,7 @@ export const {
   setSelectedElement,
   addElement,
   updateElement,
+  deleteElement,
 } = whiteboardSlice.actions;
 
 export default whiteboardSlice.reducer;
