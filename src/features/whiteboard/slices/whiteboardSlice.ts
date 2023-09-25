@@ -5,12 +5,19 @@ import ElementFactory from "../domain/ElementFactory";
 
 const elementFactory = new ElementFactory();
 
+interface State {
+  elements: Element[];
+  selectedElement: Element | null;
+}
+
 type WhiteboardState = {
   canvasSize: { width: number; height: number };
   tool: Tool;
   action: Action | null;
   elements: Element[];
   selectedElement: Element | null;
+  past: State[];
+  future: State[];
 };
 
 const initialState: WhiteboardState = {
@@ -19,6 +26,8 @@ const initialState: WhiteboardState = {
   action: null,
   elements: [],
   selectedElement: null,
+  past: [],
+  future: [],
 };
 
 const whiteboardSlice = createSlice({
@@ -44,6 +53,11 @@ const whiteboardSlice = createSlice({
       state.selectedElement = action.payload;
     },
     addElement: (state, action: PayloadAction<Element>) => {
+      state.past.push({
+        elements: state.elements,
+        selectedElement: state.selectedElement,
+      });
+      state.future = [];
       state.elements = [...state.elements, action.payload];
     },
     updateElement: (
@@ -107,9 +121,48 @@ const whiteboardSlice = createSlice({
     },
     deleteElement: (state, action: PayloadAction<number>) => {
       const index = action.payload;
+
+      state.past.push({
+        elements: [...state.elements],
+        selectedElement: state.selectedElement,
+      });
+
+      state.future = [];
+
       const elementsCopy = [...state.elements];
       elementsCopy.splice(index, 1);
       state.elements = elementsCopy;
+    },
+
+    pushToPast: (state) => {
+      state.past.push({
+        elements: [...state.elements],
+        selectedElement: state.selectedElement,
+      });
+
+      state.future = [];
+    },
+    undo: (state) => {
+      if (state.past.length === 0) return;
+      const previousState = state.past.pop();
+      if (!previousState) return;
+      state.future.push({
+        elements: state.elements,
+        selectedElement: state.selectedElement,
+      });
+      state.elements = previousState.elements;
+      state.selectedElement = previousState.selectedElement;
+    },
+    redo: (state) => {
+      if (state.future.length === 0) return;
+      const nextState = state.future.pop();
+      if (!nextState) return;
+      state.past.push({
+        elements: state.elements,
+        selectedElement: state.selectedElement,
+      });
+      state.elements = nextState.elements;
+      state.selectedElement = nextState.selectedElement;
     },
   },
 });
@@ -123,6 +176,9 @@ export const {
   addElement,
   updateElement,
   deleteElement,
+  pushToPast,
+  undo,
+  redo,
 } = whiteboardSlice.actions;
 
 export default whiteboardSlice.reducer;

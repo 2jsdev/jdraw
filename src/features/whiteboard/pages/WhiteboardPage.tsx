@@ -10,7 +10,7 @@ import { RootState } from '../../../store';
 import ElementFactory from '../domain/ElementFactory';
 import Menu from "../components/Menu"
 import { actions, tools } from '../../../constants';
-import { addElement, deleteElement, setAction, setCanvasSize, setSelectedElement, setTool, updateElement } from '../slices/whiteboardSlice';
+import { addElement, deleteElement, pushToPast, redo, setAction, setCanvasSize, setSelectedElement, setTool, undo, updateElement } from '../slices/whiteboardSlice';
 import { getResizedDimensions, getScaleFactor, updateCursorForPosition } from '../utils';
 import { getCursorForElement } from '../utils/getCursorForElement';
 
@@ -368,12 +368,17 @@ const WhiteboardPage = (): React.ReactElement => {
     const handleMouseUp = (event: React.MouseEvent<HTMLCanvasElement>) => {
         if (action === actions.WRITING) return;
 
+        if (action === actions.MOVING || action === actions.RESIZING) {
+            dispatch(pushToPast());
+        }
+
         if (tool !== tools.ERASER) {
             dispatch(setTool(tools.SELECTION));
             dispatch(setAction(actions.SELECTING));
             updateCursorForPosition(event.target as HTMLElement, "outside");
         }
     };
+
 
     const handleTextareaBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
         if (!selectedElement) return;
@@ -499,9 +504,19 @@ const WhiteboardPage = (): React.ReactElement => {
         }
     }, [selectedElement, action, adjustTextareaDimensions]);
 
+    const handleUndo = () => {
+        dispatch(undo());
+    };
+
+    const handleRedo = () => {
+        dispatch(redo());
+    };
+
     return (
         <>
             <Menu />
+            <button onClick={handleUndo}>Deshacer</button>
+            <button onClick={handleRedo}>Rehacer</button>
             <textarea
                 ref={textareaRef}
                 className="textarea"

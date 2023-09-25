@@ -50,5 +50,4 @@ export interface Element extends ElementProps {
 
   generate(generator: RoughGenerator): void;
   draw(context: CanvasRenderingContext2D, roughCanvas: RoughCanvas): void;
-  // drawSelectionBox(context: CanvasRenderingContext2D): void;
 }
