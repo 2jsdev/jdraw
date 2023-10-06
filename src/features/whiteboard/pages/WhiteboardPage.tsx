@@ -12,11 +12,13 @@ import ElementFactory from '../domain/ElementFactory';
 import { actions, tools } from '../../../constants';
 import { addElement, deleteElement, setAction, setCanvasSize, setHasFinishedMovingOrResizing, setHasStartedMovingOrResizing, setSelectedElement, setTool, updateElement } from '../slices/whiteboardSlice';
 import { setPanOffset, setStartPanMousePosition } from '../slices/panSlice';
+import { setScaleOffset } from '../slices/scaleSlice';
 import { getResizedDimensions, getScaleFactor, updateCursorForPosition } from '../utils';
 import { getCursorForElement } from '../utils/getCursorForElement';
 import usePressedKeys from '../hooks/usePressedKeys';
 
 import Menu from "../components/Menu"
+import Zoom from '../components/Zoom';
 import History from '../components/History';
 
 const elementFactory = new ElementFactory();
@@ -32,6 +34,9 @@ const WhiteboardPage = (): React.ReactElement => {
 
     const panOffset = useSelector((state: RootState) => state.pan.panOffset);
     const startPanMousePosition = useSelector((state: RootState) => state.pan.startPanMousePosition);
+
+    const scale = useSelector((state: RootState) => state.scale.value);
+    const scaleOffset = useSelector((state: RootState) => state.scale.scaleOffset);
 
     const tool = useSelector((state: RootState) => state.whiteboard.tool);
     const action = useSelector((state: RootState) => state.whiteboard.action);
@@ -59,8 +64,19 @@ const WhiteboardPage = (): React.ReactElement => {
         context.clearRect(0, 0, canvas.width, canvas.height);
         const roughCanvas = rough.canvas(canvas);
 
+
+        const scaledWidth = canvas.width * scale;
+        const scaledHeight = canvas.height * scale;
+
+        const scaleOffsetX = (scaledWidth - canvas.width) / 2;
+        const scaleOffsetY = (scaledHeight - canvas.height) / 2;
+
+        dispatch(setScaleOffset({ x: scaleOffsetX, y: scaleOffsetY }));
+
         context.save();
-        context.translate(panOffset.x, panOffset.y);
+        context.translate(panOffset.x * scale - scaleOffsetX, panOffset.y * scale - scaleOffsetY);
+
+        context.scale(scale, scale);
 
         currentElements.forEach((element: Element) => {
             elementFactory.drawElement({ roughCanvas, context, element });
@@ -71,12 +87,12 @@ const WhiteboardPage = (): React.ReactElement => {
         });
 
         context.restore();
-    }, [action, currentElements, panOffset.x, panOffset.y, selectedElement, tool]);
+    }, [action, currentElements, panOffset.x, panOffset.y, scale, selectedElement, tool, dispatch]);
 
 
     const getMouseCoordinates = (event: React.MouseEvent<HTMLCanvasElement>) => {
-        const clientX = event.clientX - panOffset.x;
-        const clientY = event.clientY - panOffset.y;
+        const clientX = (event.clientX - panOffset.x * scale + scaleOffset.x) / scale;
+        const clientY = (event.clientY - panOffset.y * scale + scaleOffset.y) / scale;
 
         return { clientX, clientY };
     };
@@ -471,13 +487,20 @@ const WhiteboardPage = (): React.ReactElement => {
         if (textArea && selectedElement) {
             const padding = 3;
             const computedWidth = getLongestLineWidth(textArea) + padding;
-            const maxWidthValue = Math.min(window.innerWidth - selectedElement?.x1 - 10, window.innerWidth - 10);
-            textArea.style.width = `${Math.min(computedWidth, maxWidthValue)}px`;
+
+            // Ten en cuenta la escala cuando determines el valor máximo de ancho
+            const maxWidthValue = Math.min((window.innerWidth - (selectedElement?.x1 * scale) - 10), window.innerWidth - 10);
+
+            // Ajusta el ancho del textarea teniendo en cuenta la escala
+            textArea.style.width = `${Math.min(computedWidth, maxWidthValue) * scale}px`;
 
             textArea.style.height = 'auto';
-            textArea.style.height = `${textArea.scrollHeight}px`;
+
+            // Ajusta la altura del textarea teniendo en cuenta la escala
+            textArea.style.height = `${textArea.scrollHeight * scale}px`;
         }
-    }, [selectedElement, textareaRef]);
+    }, [selectedElement, textareaRef, scale]);
+
 
 
     const handleTextareaKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -525,7 +548,7 @@ const WhiteboardPage = (): React.ReactElement => {
 
         if (selectedElement && selectedElement.type === tools.TEXT && action === actions.WRITING) {
             textarea.value = selectedElement.text ?? '';
-            textarea.style.fontSize = `${selectedElement.fontSize ?? 16}px`;
+            textarea.style.fontSize = `${(selectedElement.fontSize ?? 16) * scale}px`;
 
             const maxWidthValue = window.innerWidth - selectedElement.x1 - 10;
             const maxHeightValue = window.innerHeight - selectedElement.y1 - 10;
@@ -545,7 +568,7 @@ const WhiteboardPage = (): React.ReactElement => {
             }, 0);
 
         }
-    }, [selectedElement, action, adjustTextareaDimensions]);
+    }, [selectedElement, action, scale, adjustTextareaDimensions]);
 
     return (
         <>
@@ -554,8 +577,8 @@ const WhiteboardPage = (): React.ReactElement => {
                 ref={textareaRef}
                 className="textarea"
                 style={{
-                    left: `${selectedElement?.x1 ? selectedElement.x1 + panOffset.x : 0}px`,
-                    top: `${selectedElement?.y1 ? selectedElement.y1 + panOffset.y : 0}px`,
+                    top: `${selectedElement?.y1 ? (selectedElement.y1) * scale + panOffset.y * scale - scaleOffset.y : 0}px`,
+                    left: `${selectedElement?.x1 ? (selectedElement.x1) * scale + panOffset.x * scale - scaleOffset.x : 0}px`,
                 }}
                 onBlur={handleTextareaBlur}
                 onKeyDown={handleTextareaKeyDown}
@@ -573,6 +596,7 @@ const WhiteboardPage = (): React.ReactElement => {
                 height={canvasSize.height}
                 className={tool}
             />
+            <Zoom />
             <History />
         </>
     )
