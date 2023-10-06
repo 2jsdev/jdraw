@@ -1,0 +1,18 @@
+.textarea {
+  display: none;
+  position: absolute;
+  box-sizing: border-box;
+  border: none;
+  outline: none;
+  resize: none;
+  margin: 0;
+  padding: 0;
+
+  background: transparent;
+  color: var(--text-primary-color);
+  overflow: hidden;
+
+  height: auto;
+  min-height: 16px;
+  line-height: 1;
+}

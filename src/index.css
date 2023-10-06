@@ -113,25 +113,6 @@ canvas {
   width: 100%;
 }
 
-.textarea {
-  display: none;
-  position: absolute;
-  box-sizing: border-box;
-  border: none;
-  outline: none;
-  resize: none;
-  margin: 0;
-  padding: 0;
-
-  background: transparent;
-  color: var(--text-primary-color);
-  overflow: hidden;
-
-  height: auto;
-  min-height: 16px;
-  line-height: 1;
-}
-
 .SELECTION {
   cursor: default;
 }
@@ -146,8 +127,6 @@ canvas {
   cursor: crosshair !important;
 }
 
-/* Y también puedes añadir una clase para el ERASER si necesitas un cursor diferente para ello */
-
 .ERASER {
-  cursor: url("src/assets/eraser-cursor.svg") 16 16, auto !important; /* 16 16 son las coordenadas x y y del punto caliente del cursor */
+  cursor: url("src/assets/eraser-cursor.svg") 16 16, auto !important; /* 16 16 are the x and y coordinates of the cursor hot spot */
 }
