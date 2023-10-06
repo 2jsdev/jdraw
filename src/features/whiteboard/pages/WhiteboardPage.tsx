@@ -102,7 +102,7 @@ const WhiteboardPage = (): React.ReactElement => {
 
         const { clientX, clientY } = getMouseCoordinates(event);
 
-        if (pressedKeys.has(' ')) {
+        if (pressedKeys.has(' ') || tool === tools.HAND) {
             (event.target as HTMLElement).style.cursor = 'grabbing';
             dispatch(setAction(actions.PANNING));
             dispatch(setStartPanMousePosition({ x: clientX, y: clientY }));
@@ -201,8 +201,13 @@ const WhiteboardPage = (): React.ReactElement => {
 
         const { clientX, clientY } = getMouseCoordinates(event);
 
+        if (pressedKeys.has(' ') || tool === tools.HAND) {
+            (event.target as HTMLElement).style.cursor = 'grab';
+            // return;
+        }
+
         if (action === actions.PANNING) {
-            if (!pressedKeys.has(' ')) {
+            if (!pressedKeys.has(' ') && tool !== tools.HAND) {
                 (event.target as HTMLElement).style.cursor = 'default';
                 dispatch(setAction(actions.SELECTING));
                 return;
@@ -418,19 +423,20 @@ const WhiteboardPage = (): React.ReactElement => {
     const handleMouseUp = (event: React.MouseEvent<HTMLCanvasElement>) => {
         if (action === actions.WRITING) return;
 
-        if (!selectedElement) return;
-
         if (action === actions.MOVING || action === actions.RESIZING) {
-            dispatch(setHasFinishedMovingOrResizing(true));
-            const latestSelectedElement = currentElements.find((el) => el.id === selectedElement.id) as Element;
-            dispatch(updateElement({ ...latestSelectedElement, index: currentElements.findIndex((el) => el.id === latestSelectedElement.id) }));
+            if (selectedElement) {
+                dispatch(setHasFinishedMovingOrResizing(true));
+                const latestSelectedElement = currentElements.find((el) => el.id === selectedElement.id) as Element;
+                dispatch(updateElement({ ...latestSelectedElement, index: currentElements.findIndex((el) => el.id === latestSelectedElement.id) }));
+            }
         }
 
-        if (tool !== tools.ERASER) {
+        if (action !== actions.PANNING && tool !== tools.ERASER) {
             dispatch(setTool(tools.SELECTION));
-            dispatch(setAction(actions.SELECTING));
             updateCursorForPosition(event.target as HTMLElement, "outside");
         }
+
+        dispatch(setAction(actions.SELECTING));
     };
 
 

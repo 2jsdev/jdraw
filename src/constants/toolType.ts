@@ -1,4 +1,5 @@
 export const tools = {
+  HAND: "HAND",
   SELECTION: "SELECTION",
   RECTANGLE: "RECTANGLE",
   DIAMOND: "DIAMOND",
@@ -12,6 +13,7 @@ export const tools = {
 };
 
 export const toolNames = {
+  [tools.HAND]: "Hand (panning tool)",
   [tools.SELECTION]: "Selection",
   [tools.RECTANGLE]: "Rectangle",
   [tools.DIAMOND]: "Diamond",

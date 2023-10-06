@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../../store";
 import { setTool } from "../slices/whiteboardSlice";
 
+import handIcon from "../../../assets/hand.svg";
 import selectionIcon from "../../../assets/selection.svg";
 import rectangleIcon from "../../../assets/rectangle.svg";
 import diamondIcon from "../../../assets/diamond.svg";
@@ -19,6 +20,7 @@ import { Tool, tools, toolNames } from "../../../constants/toolType";
 import "./Menu.css";
 
 const iconMap = {
+    [tools.HAND]: handIcon,
     [tools.SELECTION]: selectionIcon,
     [tools.RECTANGLE]: rectangleIcon,
     [tools.DIAMOND]: diamondIcon,

@@ -40,6 +40,7 @@ const whiteboardSlice = createSlice({
     setTool: (state, action: PayloadAction<Tool>) => {
       state.tool = action.payload;
       switch (action.payload) {
+        case tools.HAND:
         case tools.RECTANGLE:
         case tools.DIAMOND:
         case tools.ELLIPSE:
@@ -61,13 +62,11 @@ const whiteboardSlice = createSlice({
       state.selectedElement = action.payload;
     },
     addElement: (state, action: PayloadAction<Element>) => {
-      // 1. Crea una copia del historial actual y añade el nuevo elemento.
       const newHistoryEntry = [
         ...state.history[state.historyIndex],
         action.payload,
       ];
 
-      // 2. Actualiza el historial y el índice.
       state.history = [
         ...state.history.slice(0, state.historyIndex + 1),
         newHistoryEntry,
