@@ -5,6 +5,7 @@ export const actions = {
   MOVING: "MOVING",
   WRITING: "WRITING",
   ERASING: "ERASING",
+  PANNING: "PANNING",
 };
 
-export type Action = typeof actions[keyof typeof actions];
+export type Action = (typeof actions)[keyof typeof actions];

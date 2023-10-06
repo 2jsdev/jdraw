@@ -11,8 +11,10 @@ import ElementFactory from '../domain/ElementFactory';
 
 import { actions, tools } from '../../../constants';
 import { addElement, deleteElement, setAction, setCanvasSize, setHasFinishedMovingOrResizing, setHasStartedMovingOrResizing, setSelectedElement, setTool, updateElement } from '../slices/whiteboardSlice';
+import { setPanOffset, setStartPanMousePosition } from '../slices/panSlice';
 import { getResizedDimensions, getScaleFactor, updateCursorForPosition } from '../utils';
 import { getCursorForElement } from '../utils/getCursorForElement';
+import usePressedKeys from '../hooks/usePressedKeys';
 
 import Menu from "../components/Menu"
 import History from '../components/History';
@@ -28,11 +30,16 @@ const WhiteboardPage = (): React.ReactElement => {
 
     const canvasSize = useSelector((state: RootState) => state.whiteboard.canvasSize);
 
+    const panOffset = useSelector((state: RootState) => state.pan.panOffset);
+    const startPanMousePosition = useSelector((state: RootState) => state.pan.startPanMousePosition);
+
     const tool = useSelector((state: RootState) => state.whiteboard.tool);
     const action = useSelector((state: RootState) => state.whiteboard.action);
 
     const currentElements = useSelector((state: RootState) => state.whiteboard.history[state.whiteboard.historyIndex]);
     const selectedElement = useSelector((state: RootState) => state.whiteboard.selectedElement);
+
+    const pressedKeys = usePressedKeys();
 
     useEffect(() => {
         const handleResize = () => setCanvasSize({ width: window.innerWidth, height: window.innerHeight });
@@ -52,6 +59,9 @@ const WhiteboardPage = (): React.ReactElement => {
         context.clearRect(0, 0, canvas.width, canvas.height);
         const roughCanvas = rough.canvas(canvas);
 
+        context.save();
+        context.translate(panOffset.x, panOffset.y);
+
         currentElements.forEach((element: Element) => {
             elementFactory.drawElement({ roughCanvas, context, element });
 
@@ -59,12 +69,29 @@ const WhiteboardPage = (): React.ReactElement => {
                 elementFactory.drawSelectionBox({ context, element });
             }
         });
-    }, [action, currentElements, selectedElement, tool]);
+
+        context.restore();
+    }, [action, currentElements, panOffset.x, panOffset.y, selectedElement, tool]);
+
+
+    const getMouseCoordinates = (event: React.MouseEvent<HTMLCanvasElement>) => {
+        const clientX = event.clientX - panOffset.x;
+        const clientY = event.clientY - panOffset.y;
+
+        return { clientX, clientY };
+    };
 
     const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
         if (action === actions.WRITING) return;
 
-        const { clientX, clientY } = event;
+        const { clientX, clientY } = getMouseCoordinates(event);
+
+        if (pressedKeys.has(' ')) {
+            (event.target as HTMLElement).style.cursor = 'grabbing';
+            dispatch(setAction(actions.PANNING));
+            dispatch(setStartPanMousePosition({ x: clientX, y: clientY }));
+            return;
+        }
 
         if (tool === tools.SELECTION) {
             const element = elementFactory.getElementAtPosition(currentElements, { x: clientX, y: clientY }, contextRef.current, selectedElement ?? undefined);
@@ -151,13 +178,25 @@ const WhiteboardPage = (): React.ReactElement => {
                 dispatch(deleteElement(index));
             }
         }
-
     }
 
     const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
         if (action === actions.WRITING) return;
 
-        const { clientX, clientY } = event;
+        const { clientX, clientY } = getMouseCoordinates(event);
+
+        if (action === actions.PANNING) {
+            if (!pressedKeys.has(' ')) {
+                (event.target as HTMLElement).style.cursor = 'default';
+                dispatch(setAction(actions.SELECTING));
+                return;
+            }
+
+            const deltaX = clientX - startPanMousePosition.x;
+            const deltaY = clientY - startPanMousePosition.y;
+            dispatch(setPanOffset({ x: panOffset.x + deltaX, y: panOffset.y + deltaY }));
+            return;
+        }
 
         if (tool === tools.SELECTION) {
             const element = elementFactory.getElementAtPosition(currentElements, { x: clientX, y: clientY }, contextRef.current, selectedElement ?? undefined);
@@ -515,8 +554,8 @@ const WhiteboardPage = (): React.ReactElement => {
                 ref={textareaRef}
                 className="textarea"
                 style={{
-                    left: `${selectedElement?.x1}px`,
-                    top: `${selectedElement?.y1}px`,
+                    left: `${selectedElement?.x1 ? selectedElement.x1 + panOffset.x : 0}px`,
+                    top: `${selectedElement?.y1 ? selectedElement.y1 + panOffset.y : 0}px`,
                 }}
                 onBlur={handleTextareaBlur}
                 onKeyDown={handleTextareaKeyDown}

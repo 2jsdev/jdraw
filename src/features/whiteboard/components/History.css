@@ -1,6 +1,7 @@
 .menu_history_container {
   display: flex;
-  position: absolute;
+  position: fixed;
+  z-index: 2;
   top: 97%;
   left: 150px;
   transform: translate(-50%, -50%);
