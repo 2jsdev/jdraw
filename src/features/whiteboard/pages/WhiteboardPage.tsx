@@ -1,23 +1,20 @@
-import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-
 import rough from "roughjs";
 import { v4 as uuid } from "uuid";
-import { Element, PositionState, Point } from '../domain/Element';
 
 import { RootState } from '../../../store';
-
-import ElementFactory from '../domain/ElementFactory';
-
 import { actions, tools } from '../../../constants';
 import { addElement, deleteElement, setAction, setCanvasSize, setHasFinishedMovingOrResizing, setHasStartedMovingOrResizing, setSelectedElement, setTool, updateElement } from '../slices/whiteboardSlice';
 import { setPanOffset, setStartPanMousePosition } from '../slices/panSlice';
 import { setScaleOffset } from '../slices/scaleSlice';
 import { getResizedDimensions, getScaleFactor, updateCursorForPosition } from '../utils';
 import { getCursorForElement } from '../utils/getCursorForElement';
-import usePressedKeys from '../hooks/usePressedKeys';
 
-import Menu from "../components/Menu"
+import { Element, PositionState, Point } from '../domain/Element';
+import ElementFactory from '../domain/ElementFactory';
+import usePressedKeys from '../hooks/usePressedKeys';
+import Menu from "../components/Menu";
 import Zoom from '../components/Zoom';
 import History from '../components/History';
 

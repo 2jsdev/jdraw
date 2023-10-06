@@ -1,20 +1,19 @@
 import React, { useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../../store';
 import { setScale } from '../slices/scaleSlice';
 
 import minusIcon from "../../../assets/minus.svg";
 import plusIcon from "../../../assets/plus.svg";
 
 import "./Zoom.css"
-import { RootState } from '../../../store';
-import usePressedKeys from '../hooks/usePressedKeys';
+
+const isMac = navigator.userAgent.includes('Macintosh');
 
 const Zoom = (): React.ReactElement => {
     const dispatch = useDispatch();
 
     const scale = useSelector((state: RootState) => state.scale.value);
-
-    const pressedKeys = usePressedKeys();
 
     const onZoom = useCallback((delta: number) => {
         dispatch(setScale(Math.min(Math.max(scale + delta, 0.1), 20)))
@@ -22,29 +21,43 @@ const Zoom = (): React.ReactElement => {
 
     useEffect(() => {
         const handleZoomWheel = (event: WheelEvent) => {
-            if (pressedKeys.has("Meta") || pressedKeys.has("Control")) {
+            const mainKey = isMac ? event.metaKey : event.ctrlKey;
+            if (mainKey) {
                 event.preventDefault();
                 const delta = event.deltaY > 0 ? 0.1 : -0.1;
                 onZoom(delta);
             }
         };
 
-        const handleZoomKeyboard = (event: KeyboardEvent) => {
-            if (event.key === "+") {
+        const handleZoomInKeyboard = (event: KeyboardEvent) => {
+            const mainKey = isMac ? event.metaKey : event.ctrlKey;
+            if (event.key === "+" && mainKey) {
+                event.preventDefault();
                 onZoom(0.1);
-            } else if (event.key === "-") {
+            }
+        }
+
+        const handleZoomOutKeyboard = (event: KeyboardEvent) => {
+            const mainKey = isMac ? event.metaKey : event.ctrlKey;
+            if (event.key === "-" && mainKey) {
+                event.preventDefault();
                 onZoom(-0.1);
             }
-        };
+        }
+
 
         window.addEventListener("wheel", handleZoomWheel);
-        window.addEventListener("keydown", handleZoomKeyboard);
+        window.addEventListener("keydown", handleZoomInKeyboard);
+        window.addEventListener("keydown", handleZoomOutKeyboard);
 
         return () => {
             window.removeEventListener("wheel", handleZoomWheel);
-            window.removeEventListener("keydown", handleZoomKeyboard);
+            window.removeEventListener("keydown", handleZoomOutKeyboard);
+            window.removeEventListener("keydown", handleZoomInKeyboard);
         };
-    }, [pressedKeys, onZoom]);
+    }, [onZoom]);
+
+
 
     return (
         <div className='menu_zoom_container'>

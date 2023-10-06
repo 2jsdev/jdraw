@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useDispatch } from 'react-redux';
 import { redo, undo } from '../slices/whiteboardSlice';
 
@@ -7,11 +7,41 @@ import redoIcon from "../../../assets/redo.svg";
 
 import "./History.css"
 
+const isMac = navigator.userAgent.includes('Macintosh');
+
 const History = (): React.ReactElement => {
     const dispatch = useDispatch();
 
-    const handleUndo = () => dispatch(undo())
-    const handleRedo = () => dispatch(redo())
+    const handleUndo = useCallback(() => dispatch(undo()), [dispatch])
+    const handleRedo = useCallback(() => dispatch(redo()), [dispatch])
+
+    useEffect(() => {
+        const handleUndoKeyboard = (event: KeyboardEvent) => {
+            const mainKey = isMac ? event.metaKey : event.ctrlKey;
+            if (event.key === "z" && mainKey) {
+                event.preventDefault();
+                handleUndo();
+            }
+        }
+
+        const handleRedoKeyboard = (event: KeyboardEvent) => {
+            const mainKey = isMac ? event.metaKey : event.ctrlKey;
+            if (event.key === "y" && mainKey) {
+                event.preventDefault();
+                handleRedo();
+            }
+        }
+
+        window.addEventListener("keydown", handleUndoKeyboard);
+        window.addEventListener("keydown", handleRedoKeyboard);
+
+        return () => {
+            window.removeEventListener("keydown", handleUndoKeyboard);
+            window.removeEventListener("keydown", handleRedoKeyboard);
+        };
+
+    }, [handleRedo, handleUndo]);
+
 
     return (
         <div className='menu_history_container'>
