@@ -45,6 +45,23 @@ class Diamond implements Element {
       roughCanvas.draw(this.element);
     }
   }
+
+  clone(): Diamond {
+    const clonedDiamond = new Diamond({
+      id: this.id,
+      type: this.type,
+      x1: this.x1,
+      y1: this.y1,
+      x2: this.x2,
+      y2: this.y2,
+      text: this.text,
+    });
+
+    // Copiamos las propiedades adicionales que no se inicializan en el constructor
+    clonedDiamond.element = this.element;
+
+    return clonedDiamond;
+  }
 }
 
 export default Diamond;

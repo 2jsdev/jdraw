@@ -33,6 +33,22 @@ class Line implements Element {
       throw new Error("Item not generated yet. Please call 'generate' first");
     }
   }
+
+  clone(): Line {
+    const clonedLine = new Line({
+      id: this.id,
+      type: this.type,
+      x1: this.x1,
+      y1: this.y1,
+      x2: this.x2,
+      y2: this.y2,
+    });
+
+    // Copiamos las propiedades adicionales que no se inicializan en el constructor
+    clonedLine.element = this.element;
+
+    return clonedLine;
+  }
 }
 
 export default Line;

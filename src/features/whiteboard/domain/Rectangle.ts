@@ -33,6 +33,17 @@ class Rectangle implements Element {
   draw(_context: CanvasRenderingContext2D, roughCanvas: RoughCanvas): void {
     roughCanvas.draw(this.element!);
   }
+
+  clone(): Rectangle {
+    return new Rectangle({
+      id: this.id,
+      type: this.type,
+      x1: this.x1,
+      y1: this.y1,
+      x2: this.x2,
+      y2: this.y2,
+    });
+  }
 }
 
 export default Rectangle;

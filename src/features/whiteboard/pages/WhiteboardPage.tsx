@@ -8,11 +8,14 @@ import { Element, PositionState, Point } from '../domain/Element';
 import { RootState } from '../../../store';
 
 import ElementFactory from '../domain/ElementFactory';
-import Menu from "../components/Menu"
+
 import { actions, tools } from '../../../constants';
-import { addElement, deleteElement, pushToPast, redo, setAction, setCanvasSize, setSelectedElement, setTool, undo, updateElement } from '../slices/whiteboardSlice';
+import { addElement, deleteElement, setAction, setCanvasSize, setHasFinishedMovingOrResizing, setHasStartedMovingOrResizing, setSelectedElement, setTool, updateElement } from '../slices/whiteboardSlice';
 import { getResizedDimensions, getScaleFactor, updateCursorForPosition } from '../utils';
 import { getCursorForElement } from '../utils/getCursorForElement';
+
+import Menu from "../components/Menu"
+import History from '../components/History';
 
 const elementFactory = new ElementFactory();
 
@@ -28,9 +31,8 @@ const WhiteboardPage = (): React.ReactElement => {
     const tool = useSelector((state: RootState) => state.whiteboard.tool);
     const action = useSelector((state: RootState) => state.whiteboard.action);
 
-    const elements = useSelector((state: RootState) => state.whiteboard.elements);
+    const currentElements = useSelector((state: RootState) => state.whiteboard.history[state.whiteboard.historyIndex]);
     const selectedElement = useSelector((state: RootState) => state.whiteboard.selectedElement);
-
 
     useEffect(() => {
         const handleResize = () => setCanvasSize({ width: window.innerWidth, height: window.innerHeight });
@@ -50,14 +52,14 @@ const WhiteboardPage = (): React.ReactElement => {
         context.clearRect(0, 0, canvas.width, canvas.height);
         const roughCanvas = rough.canvas(canvas);
 
-        elements.forEach((element: Element) => {
+        currentElements.forEach((element: Element) => {
             elementFactory.drawElement({ roughCanvas, context, element });
 
             if ((action === actions.SELECTING || action === actions.RESIZING || action === actions.MOVING) && element.id === selectedElement?.id) {
                 elementFactory.drawSelectionBox({ context, element });
             }
         });
-    }, [action, elements, selectedElement, tool]);
+    }, [action, currentElements, selectedElement, tool]);
 
     const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
         if (action === actions.WRITING) return;
@@ -65,7 +67,7 @@ const WhiteboardPage = (): React.ReactElement => {
         const { clientX, clientY } = event;
 
         if (tool === tools.SELECTION) {
-            const element = elementFactory.getElementAtPosition(elements, { x: clientX, y: clientY }, contextRef.current, selectedElement ?? undefined);
+            const element = elementFactory.getElementAtPosition(currentElements, { x: clientX, y: clientY }, contextRef.current, selectedElement ?? undefined);
 
             if (element) {
                 if (element.type === tools.PENCIL) {
@@ -80,8 +82,10 @@ const WhiteboardPage = (): React.ReactElement => {
 
                 if (element.position === "inside") {
                     dispatch(setAction(actions.MOVING));
+                    dispatch(setHasStartedMovingOrResizing(true));
                 } else if (element.position && ["top-left", "top-right", "bottom-left", "bottom-right"].includes(element.position)) {
                     dispatch(setAction(actions.RESIZING));
+                    dispatch(setHasStartedMovingOrResizing(true));
                     dispatch(setSelectedElement({ ...element, selectedCorner: element.position }));
                 } else {
                     dispatch(setAction(actions.SELECTING));
@@ -95,7 +99,7 @@ const WhiteboardPage = (): React.ReactElement => {
 
         if (tool === tools.PENCIL || tool === tools.RECTANGLE || tool === tools.ELLIPSE || tool === tools.DIAMOND || tool === tools.ARROW || tool === tools.LINE) {
             const element = elementFactory.createElement({
-                id: uuid(), type: tool, x1: clientX, y1: clientY, x2: clientX, y2: clientY,
+                id: uuid(), type: tool, x1: clientX, y1: clientY, x2: clientX, y2: clientY
             });
             dispatch(addElement(element));
             dispatch(setAction(actions.DRAWING));
@@ -105,7 +109,7 @@ const WhiteboardPage = (): React.ReactElement => {
         if (tool === tools.TEXT) {
             const element = elementFactory.createElement({
                 id: uuid(),
-                type: tools.TEXT,
+                type: tool,
                 x1: clientX,
                 y1: clientY,
                 x2: clientX,
@@ -131,17 +135,22 @@ const WhiteboardPage = (): React.ReactElement => {
                 };
             });
 
-            outerLoop:
+            const elementsToDelete = new Set<number>();
+
             for (const point of pointsAroundCircle) {
-                for (const [index, element] of elements.entries()) {
+                for (const [index, element] of currentElements.entries()) {
                     if (getCursorForElement(point.x, point.y, element, contextRef.current as CanvasRenderingContext2D) === "inside") {
-                        dispatch(deleteElement(index));
-                        break outerLoop;
+                        elementsToDelete.add(index);
                     }
                 }
             }
-        }
 
+            const sortedIndicesToDelete = Array.from(elementsToDelete).sort((a, b) => b - a);
+
+            for (const index of sortedIndicesToDelete) {
+                dispatch(deleteElement(index));
+            }
+        }
 
     }
 
@@ -151,7 +160,7 @@ const WhiteboardPage = (): React.ReactElement => {
         const { clientX, clientY } = event;
 
         if (tool === tools.SELECTION) {
-            const element = elementFactory.getElementAtPosition(elements, { x: clientX, y: clientY }, contextRef.current, selectedElement ?? undefined);
+            const element = elementFactory.getElementAtPosition(currentElements, { x: clientX, y: clientY }, contextRef.current, selectedElement ?? undefined);
 
             if (element) {
                 updateCursorForPosition(event.target as HTMLElement, element.position as PositionState);
@@ -161,17 +170,19 @@ const WhiteboardPage = (): React.ReactElement => {
         }
 
         if (selectedElement) {
+
             const { id, type, x1, y1, x2, y2, points, selectedCorner } = selectedElement;
 
-            const index = elements.findIndex((el) => el.id === selectedElement.id);
+            const index = currentElements.findIndex((el) => el.id === selectedElement.id);
 
             if (action === actions.DRAWING) {
                 dispatch(updateElement({
-                    props: { ...selectedElement, x2: clientX, y2: clientY, index, },
-                    context: contextRef.current as CanvasRenderingContext2D
+                    ...selectedElement,
+                    x2: clientX,
+                    y2: clientY,
+                    index
                 }));
             }
-
 
             if (action === actions.MOVING) {
                 if (selectedElement.type === tools.PENCIL) {
@@ -180,10 +191,7 @@ const WhiteboardPage = (): React.ReactElement => {
                         y: (clientY - (selectedElement.yOffsets ? selectedElement.yOffsets[index] : 0)),
                     }));
 
-                    dispatch(updateElement({
-                        props: { ...selectedElement, points: newPoints, index },
-                        context: contextRef.current as CanvasRenderingContext2D
-                    }));
+                    dispatch(updateElement({ ...selectedElement, points: newPoints, index }));
                 } else {
                     const { x1, y1, x2, y2, type, offsetX = 0, offsetY = 0 } = selectedElement;
                     const width = x2 - x1;
@@ -192,14 +200,12 @@ const WhiteboardPage = (): React.ReactElement => {
                     const newY1 = clientY - offsetY;
                     const options = type === tools.TEXT ? { text: selectedElement.text } : {};
 
-                    dispatch(updateElement({
-                        props: { ...selectedElement, x1: newX1, y1: newY1, x2: newX1 + width, y2: newY1 + height, ...options, index, },
-                        context: contextRef.current as CanvasRenderingContext2D
-                    }));
+                    dispatch(updateElement({ ...selectedElement, x1: newX1, y1: newY1, x2: newX1 + width, y2: newY1 + height, ...options, index, }));
                 }
             }
 
             if (action === actions.RESIZING && selectedCorner) {
+
                 if (type === tools.RECTANGLE || type === tools.DIAMOND || type === tools.ELLIPSE) {
                     const newDimensions = { newX1: x1, newY1: y1, newX2: x2, newY2: y2 };
 
@@ -225,16 +231,13 @@ const WhiteboardPage = (): React.ReactElement => {
                     }
 
                     dispatch(updateElement({
-                        props: {
-                            id,
-                            type,
-                            x1: newDimensions.newX1,
-                            y1: newDimensions.newY1,
-                            x2: newDimensions.newX2,
-                            y2: newDimensions.newY2,
-                            index
-                        },
-                        context: contextRef.current as CanvasRenderingContext2D
+                        id,
+                        type,
+                        x1: newDimensions.newX1,
+                        y1: newDimensions.newY1,
+                        x2: newDimensions.newX2,
+                        y2: newDimensions.newY2,
+                        index
                     }));
                 }
 
@@ -266,16 +269,13 @@ const WhiteboardPage = (): React.ReactElement => {
                     }
 
                     dispatch(updateElement({
-                        props: {
-                            id,
-                            type,
-                            x1: newX1,
-                            y1: newY1,
-                            x2: newX2,
-                            y2: newY2,
-                            index
-                        },
-                        context: contextRef.current as CanvasRenderingContext2D
+                        id,
+                        type,
+                        x1: newX1,
+                        y1: newY1,
+                        x2: newX2,
+                        y2: newY2,
+                        index
                     }));
                 }
 
@@ -288,32 +288,33 @@ const WhiteboardPage = (): React.ReactElement => {
                     const maxY = Math.max(...points.map(p => p.y));
 
                     let anchorX: number = 0, anchorY: number = 0, scaleX: number, scaleY: number;
+
                     switch (selectedElement.selectedCorner) {
-                        case 'top-left': {
+                        case 'top-left':
                             anchorX = maxX;
                             anchorY = maxY;
                             scaleX = (clientX - anchorX) / (minX - anchorX);
                             scaleY = (clientY - anchorY) / (minY - anchorY);
                             break;
-                        } case 'top-right': {
+                        case 'top-right':
                             anchorX = minX;
                             anchorY = maxY;
                             scaleX = (clientX - anchorX) / (maxX - anchorX);
                             scaleY = (clientY - anchorY) / (minY - anchorY);
                             break;
-                        } case 'bottom-left': {
+                        case 'bottom-left':
                             anchorX = maxX;
                             anchorY = minY;
                             scaleX = (clientX - anchorX) / (minX - anchorX);
                             scaleY = (clientY - anchorY) / (maxY - anchorY);
                             break;
-                        } case 'bottom-right': {
+                        case 'bottom-right':
                             anchorX = minX;
                             anchorY = minY;
                             scaleX = (clientX - anchorX) / (maxX - anchorX);
                             scaleY = (clientY - anchorY) / (maxY - anchorY);
                             break;
-                        } default:
+                        default:
                             throw new Error("Invalid selectedCorner value: " + selectedElement.selectedCorner);
                     }
 
@@ -328,17 +329,14 @@ const WhiteboardPage = (): React.ReactElement => {
                     const newY2 = Math.max(...newPoints.map(p => p.y));
 
                     dispatch(updateElement({
-                        props: {
-                            id,
-                            type,
-                            x1: newX1,
-                            y1: newY1,
-                            x2: newX2,
-                            y2: newY2,
-                            points: newPoints,
-                            index
-                        },
-                        context: contextRef.current as CanvasRenderingContext2D
+                        id,
+                        type,
+                        x1: newX1,
+                        y1: newY1,
+                        x2: newX2,
+                        y2: newY2,
+                        points: newPoints,
+                        index
                     }));
                 }
 
@@ -347,18 +345,15 @@ const WhiteboardPage = (): React.ReactElement => {
                     const scaleFactor = getScaleFactor({ x1, x2, newX2: newDimensions.newX2 });
 
                     dispatch(updateElement({
-                        props: {
-                            id,
-                            type,
-                            x1: newDimensions.newX1,
-                            y1: newDimensions.newY1,
-                            x2: newDimensions.newX2,
-                            y2: newDimensions.newY2,
-                            text: selectedElement.text,
-                            fontSize: (selectedElement.fontSize ?? 2) * scaleFactor,
-                            index
-                        },
-                        context: contextRef.current as CanvasRenderingContext2D
+                        id,
+                        type,
+                        x1: newDimensions.newX1,
+                        y1: newDimensions.newY1,
+                        x2: newDimensions.newX2,
+                        y2: newDimensions.newY2,
+                        text: selectedElement.text,
+                        fontSize: (selectedElement.fontSize ?? 2) * scaleFactor,
+                        index
                     }));
                 }
             }
@@ -368,8 +363,12 @@ const WhiteboardPage = (): React.ReactElement => {
     const handleMouseUp = (event: React.MouseEvent<HTMLCanvasElement>) => {
         if (action === actions.WRITING) return;
 
+        if (!selectedElement) return;
+
         if (action === actions.MOVING || action === actions.RESIZING) {
-            dispatch(pushToPast());
+            dispatch(setHasFinishedMovingOrResizing(true));
+            const latestSelectedElement = currentElements.find((el) => el.id === selectedElement.id) as Element;
+            dispatch(updateElement({ ...latestSelectedElement, index: currentElements.findIndex((el) => el.id === latestSelectedElement.id) }));
         }
 
         if (tool !== tools.ERASER) {
@@ -383,7 +382,7 @@ const WhiteboardPage = (): React.ReactElement => {
     const handleTextareaBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
         if (!selectedElement) return;
 
-        const index = elements.findIndex((el) => el.id === selectedElement.id);
+        const index = currentElements.findIndex((el) => el.id === selectedElement.id);
 
         const textareaWidth = textareaRef.current ? parseFloat(window.getComputedStyle(textareaRef.current).width) : 0;
         const textareaHeight = textareaRef.current ? parseFloat(window.getComputedStyle(textareaRef.current).height) : 0;
@@ -391,13 +390,21 @@ const WhiteboardPage = (): React.ReactElement => {
         const newX2 = selectedElement.x1 + textareaWidth;
         const newY2 = selectedElement.y1 + textareaHeight;
 
+
+        const textHasChanged = selectedElement.text !== event.target.value;
+        const positionHasChanged = selectedElement.x1 !== newX2 || selectedElement.y1 !== newY2;
+        const dimensionsHaveChanged = selectedElement.x2 !== newX2 || selectedElement.y2 !== newY2;
+
+        const hasChanged = textHasChanged || positionHasChanged || dimensionsHaveChanged;
+
         if (index !== -1 && selectedElement) {
-            dispatch(updateElement({
-                props: { ...selectedElement, x2: newX2, y2: newY2, text: event.target.value, index },
-                context: contextRef.current as CanvasRenderingContext2D,
-            }));
+            dispatch(updateElement({ ...selectedElement, x2: newX2, y2: newY2, text: event.target.value, index }));
             dispatch(setTool(tools.SELECTION));
             dispatch(setAction(actions.SELECTING));
+
+            if (hasChanged) {
+                console.log('Texto modificado, añadiendo al historial 📜');
+            }
         }
         event.target.value = '';
         textareaRef.current?.blur();
@@ -463,14 +470,11 @@ const WhiteboardPage = (): React.ReactElement => {
     const handleDoubleClick = () => {
         const textarea = textareaRef.current;
         if (textarea && selectedElement && selectedElement.type === tools.TEXT) {
-            const index = elements.findIndex((el) => el.id === selectedElement.id);
+            const index = currentElements.findIndex((el) => el.id === selectedElement.id);
 
             textarea.value = selectedElement.text ?? '';
 
-            dispatch(updateElement({
-                props: { ...selectedElement, text: '', index },
-                context: contextRef.current as CanvasRenderingContext2D,
-            }));
+            dispatch(updateElement({ ...selectedElement, text: '', index }));
             dispatch(setTool(tools.TEXT));
             dispatch(setAction(actions.WRITING));
         }
@@ -504,19 +508,9 @@ const WhiteboardPage = (): React.ReactElement => {
         }
     }, [selectedElement, action, adjustTextareaDimensions]);
 
-    const handleUndo = () => {
-        dispatch(undo());
-    };
-
-    const handleRedo = () => {
-        dispatch(redo());
-    };
-
     return (
         <>
             <Menu />
-            <button onClick={handleUndo}>Deshacer</button>
-            <button onClick={handleRedo}>Rehacer</button>
             <textarea
                 ref={textareaRef}
                 className="textarea"
@@ -540,6 +534,7 @@ const WhiteboardPage = (): React.ReactElement => {
                 height={canvasSize.height}
                 className={tool}
             />
+            <History />
         </>
     )
 }

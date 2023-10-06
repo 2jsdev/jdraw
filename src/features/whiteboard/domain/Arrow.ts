@@ -58,6 +58,25 @@ class Arrow implements Element {
       roughCanvas.draw(this.headElement);
     }
   }
+
+  clone(): Arrow {
+    const clonedArrow = new Arrow({
+      id: this.id,
+      type: this.type,
+      x1: this.x1,
+      y1: this.y1,
+      x2: this.x2,
+      y2: this.y2,
+      text: this.text,
+    });
+
+    // Copiamos las propiedades adicionales que no se inicializan en el constructor
+    clonedArrow.element = this.element;
+    clonedArrow.headElement = this.headElement;
+    clonedArrow.headPoints = [...this.headPoints];
+
+    return clonedArrow;
+  }
 }
 
 export default Arrow;

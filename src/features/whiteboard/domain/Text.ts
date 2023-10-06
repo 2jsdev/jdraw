@@ -57,6 +57,22 @@ class Text implements Element {
       offsetY += this.fontSize;
     }
   }
+
+  clone(): Text {
+    return new Text({
+      id: this.id,
+      x1: this.x1,
+      y1: this.y1,
+      x2: this.x2,
+      y2: this.y2,
+      type: this.type,
+      text: this.text,
+      fontSize: this.fontSize,
+      fontFamily: this.fontFamily,
+      fontStyle: this.fontStyle,
+      fontWeight: this.fontWeight,
+    });
+  }
 }
 
 export default Text;

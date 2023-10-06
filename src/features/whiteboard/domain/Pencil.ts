@@ -54,7 +54,7 @@ class Pencil implements Element {
 
     const pathData = getSvgPathFromStroke(myStroke);
     const path = new Path2D(pathData);
-    context.fillStyle = "#000000";
+    // context.fillStyle = "#000000";
     context.fill(path);
   }
 
@@ -126,6 +126,22 @@ class Pencil implements Element {
       maxX: maxX + OFFSET,
       maxY: maxY + OFFSET,
     };
+  }
+
+  clone(): Pencil {
+    const copy = new Pencil({
+      id: this.id,
+      type: this.type,
+      x1: this.x1,
+      y1: this.y1,
+      x2: this.x2,
+      y2: this.y2,
+      xOffsets: [...(this.xOffsets || [])],
+      yOffsets: [...(this.yOffsets || [])],
+    });
+    copy.element = this.element;
+    copy.points = this.points.map((point) => ({ x: point.x, y: point.y })); // Copia superficial de los puntos
+    return copy;
   }
 }
 

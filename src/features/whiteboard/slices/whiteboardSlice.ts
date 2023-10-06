@@ -5,29 +5,26 @@ import ElementFactory from "../domain/ElementFactory";
 
 const elementFactory = new ElementFactory();
 
-interface State {
-  elements: Element[];
-  selectedElement: Element | null;
-}
-
 type WhiteboardState = {
   canvasSize: { width: number; height: number };
   tool: Tool;
   action: Action | null;
-  elements: Element[];
   selectedElement: Element | null;
-  past: State[];
-  future: State[];
+  history: Element[][];
+  historyIndex: number;
+  hasStartedMovingOrResizing: boolean;
+  hasFinishedMovingOrResizing: boolean;
 };
 
 const initialState: WhiteboardState = {
   canvasSize: { width: window.innerWidth, height: window.innerHeight },
   tool: tools.SELECTION,
   action: null,
-  elements: [],
   selectedElement: null,
-  past: [],
-  future: [],
+  history: [[]],
+  historyIndex: 0,
+  hasStartedMovingOrResizing: false,
+  hasFinishedMovingOrResizing: false,
 };
 
 const whiteboardSlice = createSlice({
@@ -42,127 +39,148 @@ const whiteboardSlice = createSlice({
     },
     setTool: (state, action: PayloadAction<Tool>) => {
       state.tool = action.payload;
+      switch (action.payload) {
+        case tools.ERASER:
+          state.selectedElement = null;
+          break;
+        default:
+          break;
+      }
     },
     setAction: (state, action: PayloadAction<Action | null>) => {
       state.action = action.payload;
-    },
-    setElements: (state, action: PayloadAction<Element[]>) => {
-      state.elements = action.payload;
     },
     setSelectedElement: (state, action: PayloadAction<Element | null>) => {
       state.selectedElement = action.payload;
     },
     addElement: (state, action: PayloadAction<Element>) => {
-      state.past.push({
-        elements: state.elements,
-        selectedElement: state.selectedElement,
-      });
-      state.future = [];
-      state.elements = [...state.elements, action.payload];
-    },
-    updateElement: (
-      state,
-      action: PayloadAction<{
-        props: ElementUpdateProps;
-        context: CanvasRenderingContext2D;
-      }>
-    ) => {
-      const { props, context } = action.payload;
+      // 1. Crea una copia del historial actual y añade el nuevo elemento.
+      const newHistoryEntry = [
+        ...state.history[state.historyIndex],
+        action.payload,
+      ];
 
-      const elementsCopy = [...state.elements];
+      // 2. Actualiza el historial y el índice.
+      state.history = [
+        ...state.history.slice(0, state.historyIndex + 1),
+        newHistoryEntry,
+      ];
+      state.historyIndex++;
+    },
+    updateElement: (state, action: PayloadAction<ElementUpdateProps>) => {
+      const { index, type, id, x1, y1, x2, y2, text, fontSize, points } =
+        action.payload;
+      const currentElements = state.history[state.historyIndex];
+      const updatedElements = [...currentElements];
+      let updatedElementCopy = updatedElements[index].clone();
 
       const elementAction = state.action;
 
-      switch (props.type) {
+      switch (type) {
         case tools.RECTANGLE:
         case tools.DIAMOND:
         case tools.ELLIPSE:
         case tools.ARROW:
         case tools.LINE: {
-          const updatedElement = elementFactory.createElement({
-            id: props.id,
-            x1: props.x1,
-            y1: props.y1,
-            x2: props.x2,
-            y2: props.y2,
-            type: props.type,
+          const newElement = elementFactory.createElement({
+            id,
+            x1,
+            y1,
+            x2,
+            y2,
+            type,
           });
-          elementsCopy[props.index] = updatedElement;
+          updatedElementCopy = newElement;
           break;
         }
         case tools.TEXT: {
-          elementsCopy[props.index].x1 = props.x1;
-          elementsCopy[props.index].y1 = props.y1;
-          elementsCopy[props.index].x2 = props.x2;
-          elementsCopy[props.index].y2 = props.y2;
-          elementsCopy[props.index].text = props.text;
-          elementsCopy[props.index].lines = props.text!.split("\n");
-          elementsCopy[props.index].fontSize = props.fontSize;
+          updatedElementCopy.x1 = x1;
+          updatedElementCopy.y1 = y1;
+          updatedElementCopy.x2 = x2;
+          updatedElementCopy.y2 = y2;
+          updatedElementCopy.text = text;
+          updatedElementCopy.lines = text!.split("\n");
+          updatedElementCopy.fontSize = fontSize;
           break;
         }
         case tools.PENCIL: {
           if (elementAction === actions.DRAWING) {
-            elementsCopy[props.index].points = [
-              ...(elementsCopy[props.index].points as Point[]),
-              { x: props.x2, y: props.y2 },
+            updatedElementCopy.points = [
+              ...(updatedElementCopy.points as Point[]),
+              { x: x2, y: y2 },
             ];
-          } else if (elementAction === actions.MOVING) {
-            elementsCopy[props.index].points = props.points;
-          } else if (elementAction === actions.RESIZING) {
-            elementsCopy[props.index].points = props.points;
+          } else if (
+            elementAction === actions.MOVING ||
+            elementAction === actions.RESIZING
+          ) {
+            updatedElementCopy.points = points;
           }
+          updatedElementCopy.x1 = x1;
+          updatedElementCopy.y1 = y1;
+          updatedElementCopy.x2 = x2;
+          updatedElementCopy.y2 = y2;
           break;
         }
         default:
           break;
       }
 
-      state.elements = elementsCopy;
+      updatedElements[index] = updatedElementCopy;
+
+      if (
+        elementAction === actions.MOVING ||
+        elementAction === actions.RESIZING
+      ) {
+        if (state.hasStartedMovingOrResizing) {
+          state.history = [
+            ...state.history.slice(0, state.historyIndex + 1),
+            updatedElements,
+          ];
+          state.historyIndex++;
+          state.hasStartedMovingOrResizing = false;
+        } else if (state.hasFinishedMovingOrResizing) {
+          state.history[state.historyIndex] = updatedElements;
+          state.hasFinishedMovingOrResizing = false;
+        } else {
+          state.history[state.historyIndex] = updatedElements;
+        }
+      } else {
+        state.history[state.historyIndex] = updatedElements;
+      }
     },
     deleteElement: (state, action: PayloadAction<number>) => {
-      const index = action.payload;
+      const currentHistory = [...state.history[state.historyIndex]];
+      currentHistory.splice(action.payload, 1);
 
-      state.past.push({
-        elements: [...state.elements],
-        selectedElement: state.selectedElement,
-      });
+      state.history = [
+        ...state.history.slice(0, state.historyIndex + 1),
+        currentHistory,
+      ];
 
-      state.future = [];
-
-      const elementsCopy = [...state.elements];
-      elementsCopy.splice(index, 1);
-      state.elements = elementsCopy;
-    },
-
-    pushToPast: (state) => {
-      state.past.push({
-        elements: [...state.elements],
-        selectedElement: state.selectedElement,
-      });
-
-      state.future = [];
+      state.historyIndex++;
     },
     undo: (state) => {
-      if (state.past.length === 0) return;
-      const previousState = state.past.pop();
-      if (!previousState) return;
-      state.future.push({
-        elements: state.elements,
-        selectedElement: state.selectedElement,
-      });
-      state.elements = previousState.elements;
-      state.selectedElement = previousState.selectedElement;
+      if (state.historyIndex > 0) {
+        state.historyIndex--;
+      } else {
+        console.log("¡Ya estás al inicio del historial! 🕰️");
+      }
     },
     redo: (state) => {
-      if (state.future.length === 0) return;
-      const nextState = state.future.pop();
-      if (!nextState) return;
-      state.past.push({
-        elements: state.elements,
-        selectedElement: state.selectedElement,
-      });
-      state.elements = nextState.elements;
-      state.selectedElement = nextState.selectedElement;
+      if (state.historyIndex < state.history.length - 1) {
+        state.historyIndex++;
+      } else {
+        console.log("¡Ya estás al final del historial! 🚀");
+      }
+    },
+    setHistoryIndex: (state, action: PayloadAction<number>) => {
+      state.historyIndex = action.payload;
+    },
+    setHasStartedMovingOrResizing: (state, action: PayloadAction<boolean>) => {
+      state.hasStartedMovingOrResizing = action.payload;
+    },
+    setHasFinishedMovingOrResizing: (state, action: PayloadAction<boolean>) => {
+      state.hasFinishedMovingOrResizing = action.payload;
     },
   },
 });
@@ -171,14 +189,15 @@ export const {
   setCanvasSize,
   setTool,
   setAction,
-  setElements,
   setSelectedElement,
   addElement,
   updateElement,
   deleteElement,
-  pushToPast,
   undo,
   redo,
+  setHistoryIndex,
+  setHasStartedMovingOrResizing,
+  setHasFinishedMovingOrResizing,
 } = whiteboardSlice.actions;
 
 export default whiteboardSlice.reducer;

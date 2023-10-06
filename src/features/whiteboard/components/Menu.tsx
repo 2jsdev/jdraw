@@ -1,5 +1,6 @@
-import { Tool, tools } from "../../../constants/toolType";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../../store";
 import { setTool } from "../slices/whiteboardSlice";
 
 import selectionIcon from "../../../assets/selection.svg";
@@ -13,8 +14,9 @@ import textIcon from "../../../assets/text.svg";
 // import insertImageIcon from "../../../assets/insert_image.svg";
 import eraserIcon from "../../../assets/eraser.svg";
 
+import { Tool, tools, toolNames } from "../../../constants/toolType";
+
 import "./Menu.css";
-import { RootState } from "../../../store";
 
 const iconMap = {
     [tools.SELECTION]: selectionIcon,
@@ -37,11 +39,41 @@ const Menu = () => {
         dispatch(setTool(type));
     };
 
+    useEffect(() => {
+        let tooltipTimeout: number | undefined;
+
+        const mouseEnterHandler = (event: Event) => {
+            const button = event.currentTarget as HTMLElement;
+            tooltipTimeout = setTimeout(() => {
+                button.classList.add('show-tooltip');
+            }, 2000);
+        };
+
+        const mouseLeaveHandler = (event: Event) => {
+            clearTimeout(tooltipTimeout);
+            const button = event.currentTarget as HTMLElement;
+            button.classList.remove('show-tooltip');
+        };
+
+        document.querySelectorAll('.menu_button').forEach(button => {
+            button.addEventListener('mouseenter', mouseEnterHandler);
+            button.addEventListener('mouseleave', mouseLeaveHandler);
+        });
+
+        return () => {
+            document.querySelectorAll('.menu_button').forEach(button => {
+                button.removeEventListener('mouseenter', mouseEnterHandler);
+                button.removeEventListener('mouseleave', mouseLeaveHandler);
+            });
+        };
+    }, []);
+
     return (
         <div className="menu_container">
             {Object.entries(iconMap).map(([type, iconSrc]) => (
                 <button
                     key={type}
+                    data-tooltip={toolNames[type]}
                     className={`menu_button ${tool === type ? "menu_button_active" : ""}`}
                     onClick={() => handleToolChange(type)}
                 >
