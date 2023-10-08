@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect } from 'react'
 import { useDispatch } from 'react-redux';
-import { redo, undo } from '../slices/whiteboardSlice';
+import { redo, undo } from '../../slices/whiteboardSlice';
 
-import undoIcon from "../../../assets/undo.svg";
-import redoIcon from "../../../assets/redo.svg";
+import undoIcon from "../../../../assets/undo.svg";
+import redoIcon from "../../../../assets/redo.svg";
 
 import "./History.css"
 

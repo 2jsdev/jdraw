@@ -6,12 +6,13 @@ import { setAction, setTool, updateElement } from '../../slices/whiteboardSlice'
 
 import './EditableTextarea.css';
 
-const EditableTextarea: React.FC<{
-    context: CanvasRenderingContext2D; textareaRef: React.RefObject<HTMLTextAreaElement>;
-}> = ({ textareaRef, context }) => {
-    const dispatch = useDispatch();
+interface EditableTextareaProps {
+    textareaRef: React.RefObject<HTMLTextAreaElement>;
+    context: CanvasRenderingContext2D;
+}
 
-    // const textareaRef = useRef<HTMLTextAreaElement>(null);
+const EditableTextarea: React.FC<EditableTextareaProps> = ({ textareaRef, context }) => {
+    const dispatch = useDispatch();
 
     const action = useSelector((state: RootState) => state.whiteboard.action);
 
@@ -57,10 +58,9 @@ const EditableTextarea: React.FC<{
     };
 
 
-    const getLongestLineWidth = (textArea: HTMLTextAreaElement) => {
+    const getLongestLineWidth = useCallback((textArea: HTMLTextAreaElement) => {
         const lines = textArea.value.split('\n');
         const font = window.getComputedStyle(textArea).font;
-        // const context = contextRef.current as CanvasRenderingContext2D;
 
         context.font = font;
 
@@ -70,7 +70,7 @@ const EditableTextarea: React.FC<{
         }, 0);
 
         return longestLine;
-    }
+    }, [context])
 
     const adjustTextareaDimensions = useCallback(() => {
         const textArea = textareaRef.current;
@@ -90,7 +90,7 @@ const EditableTextarea: React.FC<{
             // Ajusta la altura del textarea teniendo en cuenta la escala
             textArea.style.height = `${textArea.scrollHeight * scale}px`;
         }
-    }, [selectedElement, textareaRef, scale]);
+    }, [textareaRef, selectedElement, scale, getLongestLineWidth]);
 
     const handleTextareaKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
         const textarea = textareaRef.current;
@@ -146,7 +146,6 @@ const EditableTextarea: React.FC<{
 
         }
     }, [selectedElement, action, scale, textareaRef, adjustTextareaDimensions]);
-
 
     return (
         <textarea

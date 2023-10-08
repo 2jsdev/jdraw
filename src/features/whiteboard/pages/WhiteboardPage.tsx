@@ -14,10 +14,7 @@ import { getCursorForElement } from '../utils/getCursorForElement';
 import { Element, PositionState, Point } from '../domain/Element';
 import ElementFactory from '../domain/ElementFactory';
 import usePressedKeys from '../hooks/usePressedKeys';
-import Menu from "../components/Menu";
-import Zoom from '../components/Zoom';
-import History from '../components/History';
-import { EditableTextarea } from '../components/EditableTextarea';
+import { EditableTextarea, History, Menu, Zoom } from '../components';
 
 const elementFactory = new ElementFactory();
 
@@ -149,13 +146,7 @@ const WhiteboardPage = (): React.ReactElement => {
 
         if (tool === tools.TEXT) {
             const element = elementFactory.createElement({
-                id: uuid(),
-                type: tool,
-                x1: clientX,
-                y1: clientY,
-                x2: clientX,
-                y2: clientY,
-                text: '',
+                id: uuid(), type: tool, x1: clientX, y1: clientY, x2: clientX, y2: clientY, text: '',
             });
 
             dispatch(addElement(element));
@@ -234,12 +225,7 @@ const WhiteboardPage = (): React.ReactElement => {
             const index = currentElements.findIndex((el) => el.id === selectedElement.id);
 
             if (action === actions.DRAWING) {
-                dispatch(updateElement({
-                    ...selectedElement,
-                    x2: clientX,
-                    y2: clientY,
-                    index
-                }));
+                dispatch(updateElement({ ...selectedElement, x2: clientX, y2: clientY, index }));
             }
 
             if (action === actions.MOVING) {
@@ -289,13 +275,7 @@ const WhiteboardPage = (): React.ReactElement => {
                     }
 
                     dispatch(updateElement({
-                        id,
-                        type,
-                        x1: newDimensions.newX1,
-                        y1: newDimensions.newY1,
-                        x2: newDimensions.newX2,
-                        y2: newDimensions.newY2,
-                        index
+                        id, type, x1: newDimensions.newX1, y1: newDimensions.newY1, x2: newDimensions.newX2, y2: newDimensions.newY2, index
                     }));
                 }
 
@@ -327,13 +307,7 @@ const WhiteboardPage = (): React.ReactElement => {
                     }
 
                     dispatch(updateElement({
-                        id,
-                        type,
-                        x1: newX1,
-                        y1: newY1,
-                        x2: newX2,
-                        y2: newY2,
-                        index
+                        id, type, x1: newX1, y1: newY1, x2: newX2, y2: newY2, index
                     }));
                 }
 
@@ -387,14 +361,7 @@ const WhiteboardPage = (): React.ReactElement => {
                     const newY2 = Math.max(...newPoints.map(p => p.y));
 
                     dispatch(updateElement({
-                        id,
-                        type,
-                        x1: newX1,
-                        y1: newY1,
-                        x2: newX2,
-                        y2: newY2,
-                        points: newPoints,
-                        index
+                        id, type, x1: newX1, y1: newY1, x2: newX2, y2: newY2, points: newPoints, index
                     }));
                 }
 
@@ -403,15 +370,7 @@ const WhiteboardPage = (): React.ReactElement => {
                     const scaleFactor = getScaleFactor({ x1, x2, newX2: newDimensions.newX2 });
 
                     dispatch(updateElement({
-                        id,
-                        type,
-                        x1: newDimensions.newX1,
-                        y1: newDimensions.newY1,
-                        x2: newDimensions.newX2,
-                        y2: newDimensions.newY2,
-                        text: selectedElement.text,
-                        fontSize: (selectedElement.fontSize ?? 2) * scaleFactor,
-                        index
+                        id, type, x1: newDimensions.newX1, y1: newDimensions.newY1, x2: newDimensions.newX2, y2: newDimensions.newY2, text: selectedElement.text, fontSize: (selectedElement.fontSize ?? 2) * scaleFactor, index
                     }));
                 }
             }
@@ -453,7 +412,10 @@ const WhiteboardPage = (): React.ReactElement => {
     return (
         <>
             <Menu />
-            <EditableTextarea textareaRef={textareaRef} context={contextRef.current as CanvasRenderingContext2D} />
+            <EditableTextarea
+                textareaRef={textareaRef}
+                context={contextRef.current as CanvasRenderingContext2D}
+            />
             <canvas
                 id="whiteboard"
                 ref={canvasRef}

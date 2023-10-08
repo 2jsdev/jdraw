@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../../store';
-import { setScale } from '../slices/scaleSlice';
+import { RootState } from '../../../../store';
+import { setScale } from '../../slices/scaleSlice';
 
-import minusIcon from "../../../assets/minus.svg";
-import plusIcon from "../../../assets/plus.svg";
+import minusIcon from "../../../../assets/minus.svg";
+import plusIcon from "../../../../assets/plus.svg";
 
 import "./Zoom.css"
 

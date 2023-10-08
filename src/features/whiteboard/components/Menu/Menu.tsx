@@ -1,21 +1,21 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../../../store";
-import { setTool } from "../slices/whiteboardSlice";
+import { RootState } from "../../../../store";
+import { setTool } from "../../slices/whiteboardSlice";
 
-import handIcon from "../../../assets/hand.svg";
-import selectionIcon from "../../../assets/selection.svg";
-import rectangleIcon from "../../../assets/rectangle.svg";
-import diamondIcon from "../../../assets/diamond.svg";
-import ellipseIcon from "../../../assets/ellipse.svg";
-import arrowIcon from "../../../assets/arrow.svg";
-import lineIcon from "../../../assets/line.svg";
-import pencilIcon from "../../../assets/draw.svg";
-import textIcon from "../../../assets/text.svg";
-// import insertImageIcon from "../../../assets/insert_image.svg";
-import eraserIcon from "../../../assets/eraser.svg";
+import handIcon from "../../../../assets/hand.svg";
+import selectionIcon from "../../../../assets/selection.svg";
+import rectangleIcon from "../../../../assets/rectangle.svg";
+import diamondIcon from "../../../../assets/diamond.svg";
+import ellipseIcon from "../../../../assets/ellipse.svg";
+import arrowIcon from "../../../../assets/arrow.svg";
+import lineIcon from "../../../../assets/line.svg";
+import pencilIcon from "../../../../assets/draw.svg";
+import textIcon from "../../../../assets/text.svg";
+// import insertImageIcon from "../../../../assets/insert_image.svg";
+import eraserIcon from "../../../../assets/eraser.svg";
 
-import { Tool, tools, toolNames } from "../../../constants/toolType";
+import { Tool, tools, toolNames } from "../../../../constants/toolType";
 
 import "./Menu.css";
 
