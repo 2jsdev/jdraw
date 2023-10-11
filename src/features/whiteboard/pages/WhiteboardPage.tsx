@@ -15,6 +15,7 @@ import { Element, PositionState, Point } from '../domain/Element';
 import ElementFactory from '../domain/ElementFactory';
 import usePressedKeys from '../hooks/usePressedKeys';
 import { EditableTextarea, History, Menu, Zoom } from '../components';
+import DropdownMenuButton from '../components/DropdownMenuButton/DropdownMenuButton';
 
 const elementFactory = new ElementFactory();
 
@@ -411,6 +412,7 @@ const WhiteboardPage = (): React.ReactElement => {
 
     return (
         <>
+            <DropdownMenuButton />
             <Menu />
             <EditableTextarea
                 textareaRef={textareaRef}
