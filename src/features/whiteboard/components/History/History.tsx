@@ -45,11 +45,11 @@ const History = (): React.ReactElement => {
 
     return (
         <div className='menu_history_container'>
-            <button className="button" onClick={handleUndo} data-tooltip="Undo">
+            <button className="menu_history_button" onClick={handleUndo} data-tooltip="Undo">
                 <img src={undoIcon} alt="undo" width="80%" height="80%" />
             </button>
             <div className="separator"></div>
-            <button className="button" onClick={handleRedo} data-tooltip="Redo">
+            <button className="menu_history_button" onClick={handleRedo} data-tooltip="Redo">
                 <img src={redoIcon} alt="redo" width="80%" height="80%" />
             </button>
         </div>

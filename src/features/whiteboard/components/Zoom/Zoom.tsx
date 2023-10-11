@@ -61,15 +61,15 @@ const Zoom = (): React.ReactElement => {
 
     return (
         <div className='menu_zoom_container'>
-            <button className="button" onClick={() => onZoom(-0.1)} data-tooltip="Zoom out">
+            <button className="menu_zoom_button" onClick={() => onZoom(-0.1)} data-tooltip="Zoom out">
                 <img src={minusIcon} alt="undo" width="80%" height="80%" />
             </button>
 
-            <button className="button button-wide" onClick={() => dispatch(setScale(1))} data-tooltip="Reset zoom">
+            <button className="menu_zoom_button menu_zoom_button_wide" onClick={() => dispatch(setScale(1))} data-tooltip="Reset zoom">
                 {new Intl.NumberFormat("en-GB", { style: "percent" }).format(scale)}
             </button>
 
-            <button className="button" onClick={() => onZoom(0.1)} data-tooltip="Zoom in">
+            <button className="menu_zoom_button" onClick={() => onZoom(0.1)} data-tooltip="Zoom in">
                 <img src={plusIcon} alt="redo" width="80%" height="80%" />
             </button>
         </div>
