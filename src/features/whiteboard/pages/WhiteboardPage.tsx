@@ -412,7 +412,7 @@ const WhiteboardPage = (): React.ReactElement => {
 
     return (
         <>
-            <DropdownMenuButton />
+            <DropdownMenuButton canvasRef={canvasRef} />
             <Menu />
             <EditableTextarea
                 textareaRef={textareaRef}

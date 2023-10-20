@@ -1,18 +1,25 @@
-import React, { useEffect, useState } from 'react'
-import menuIcon from "../../../../assets/menu.svg";
+import React, { useEffect, useRef, useState } from 'react'
+import { useDispatch } from 'react-redux';
+import { resetCanvas } from '../../slices/whiteboardSlice';
 
+import menuIcon from "../../../../assets/menu.svg";
 import exportImageIcon from "../../../../assets/export-image.svg";
 import peopleIcon from "../../../../assets/people.svg";
 import resetIcon from "../../../../assets/reset.svg";
 
 import "./DropdownMenuButton.css"
+import ConfirmModal from '../ConfirmModal/ConfirmModal';
 
-const DropdownMenuButton: React.FC = () => {
+interface DropdownMenuButtonProps {
+    canvasRef: React.RefObject<HTMLCanvasElement>;
+}
+
+const DropdownMenuButton: React.FC<DropdownMenuButtonProps> = ({ canvasRef }) => {
+    const dispatch = useDispatch();
+    const downloadLinkRef = useRef<HTMLAnchorElement>(null);
+
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-    const handleButtonClick = () => {
-        setIsMenuOpen(!isMenuOpen);
-    };
+    const [isResetConfirmationModalOpen, setIsResetConfirmationModalOpen] = useState<boolean>(false);
 
     useEffect(() => {
         const handleDocumentClick = (event: MouseEvent) => {
@@ -29,30 +36,55 @@ const DropdownMenuButton: React.FC = () => {
         };
     }, []);
 
+    const toggleMenu = () => setIsMenuOpen(prev => !prev);
+
+    const exportCanvasAsImage = () => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const image = canvas.toDataURL("image/png");
+            if (downloadLinkRef.current) {
+                downloadLinkRef.current.href = image;
+                downloadLinkRef.current.click();
+            }
+        }
+    };
+
+    const resetCanvasWithConfirmation = () => {
+        dispatch(resetCanvas());
+        setIsResetConfirmationModalOpen(false);
+    };
+
     return (
         <>
-            <button className="dropdown_menu_button" onClick={handleButtonClick}>
+            <button className="dropdown_menu_button" onClick={toggleMenu}>
                 <img src={menuIcon} alt="" width="80%" height="80%" />
             </button>
             {isMenuOpen && (
                 <ul className="menu">
-                    <li>
+                    <button onClick={exportCanvasAsImage}>
                         <img src={exportImageIcon} alt="Export Image" className="menu-icon" />
                         Export image...
-                    </li>
-                    <li>
-                        <img src={peopleIcon} alt="Live Collaboration" className="menu-icon" />
+                    </button>
+                    <button disabled>
+                        <img src={peopleIcon} alt="Live Collaboration" className="menu-icon disabled" />
                         Live collaboration...
-                    </li>
-                    <li>
+                    </button>
+                    <button onClick={() => setIsResetConfirmationModalOpen(true)}>
                         <img src={resetIcon} alt="Reset Canvas" className="menu-icon" />
                         Reset the canvas
-                    </li>
+                    </button>
                 </ul>
             )}
+            <a ref={downloadLinkRef} download="canvas.png" style={{ display: 'none' }} />
+            <ConfirmModal
+                isOpen={isResetConfirmationModalOpen}
+                onClose={() => setIsResetConfirmationModalOpen(false)}
+                onConfirm={resetCanvasWithConfirmation}
+                title="Clear canvas"
+                description="This will clear the whole canvas. Are you sure?"
+            />
         </>
-
     );
 }
 
-export default DropdownMenuButton
+export default DropdownMenuButton;

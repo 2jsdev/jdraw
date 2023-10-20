@@ -173,6 +173,11 @@ const whiteboardSlice = createSlice({
     setHasFinishedMovingOrResizing: (state, action: PayloadAction<boolean>) => {
       state.hasFinishedMovingOrResizing = action.payload;
     },
+    resetCanvas: (state) => {
+      state.history = [[]];
+      state.historyIndex = 0;
+      state.selectedElement = null;
+    },
   },
 });
 
@@ -189,6 +194,7 @@ export const {
   setHistoryIndex,
   setHasStartedMovingOrResizing,
   setHasFinishedMovingOrResizing,
+  resetCanvas,
 } = whiteboardSlice.actions;
 
 export default whiteboardSlice.reducer;
