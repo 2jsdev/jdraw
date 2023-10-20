@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../../../store";
-import { setTool } from "../../slices/whiteboardSlice";
+import { setSelectedElement, setTool } from "../../slices/whiteboardSlice";
 
 import handIcon from "../../../../assets/hand.svg";
 import selectionIcon from "../../../../assets/selection.svg";
@@ -39,6 +39,7 @@ const Menu = () => {
 
     const handleToolChange = (type: Tool) => {
         dispatch(setTool(type));
+        dispatch(setSelectedElement(null));
     };
 
     useEffect(() => {

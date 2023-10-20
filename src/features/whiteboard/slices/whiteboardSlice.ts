@@ -39,21 +39,6 @@ const whiteboardSlice = createSlice({
     },
     setTool: (state, action: PayloadAction<Tool>) => {
       state.tool = action.payload;
-      switch (action.payload) {
-        case tools.HAND:
-        case tools.RECTANGLE:
-        case tools.DIAMOND:
-        case tools.ELLIPSE:
-        case tools.ARROW:
-        case tools.LINE:
-        case tools.PENCIL:
-        case tools.TEXT:
-        case tools.ERASER:
-          state.selectedElement = null;
-          break;
-        default:
-          break;
-      }
     },
     setAction: (state, action: PayloadAction<Action | null>) => {
       state.action = action.payload;
