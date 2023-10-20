@@ -78,7 +78,7 @@ const WhiteboardPage = (): React.ReactElement => {
         currentElements.forEach((element: Element) => {
             elementFactory.drawElement({ roughCanvas, context, element });
 
-            if ((action === actions.SELECTING || action === actions.RESIZING || action === actions.MOVING) && element.id === selectedElement?.id) {
+            if ((tool !== tools.PENCIL && (action === actions.SELECTING || action === actions.RESIZING || action === actions.MOVING) && element.id === selectedElement?.id)) {
                 elementFactory.drawSelectionBox({ context, element });
             }
         });
@@ -387,6 +387,11 @@ const WhiteboardPage = (): React.ReactElement => {
                 const latestSelectedElement = currentElements.find((el) => el.id === selectedElement.id) as Element;
                 dispatch(updateElement({ ...latestSelectedElement, index: currentElements.findIndex((el) => el.id === latestSelectedElement.id) }));
             }
+        }
+
+        if (tool === tools.PENCIL) {
+            dispatch(setAction(actions.SELECTING));
+            return;
         }
 
         if (action !== actions.PANNING && tool !== tools.ERASER) {
