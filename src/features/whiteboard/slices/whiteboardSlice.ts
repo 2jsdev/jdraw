@@ -1,6 +1,11 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { Action, actions, Tool, tools } from "../../../constants";
-import { Element, ElementUpdateProps, Point } from "../domain/Element";
+import {
+  Element,
+  ElementProps,
+  ElementUpdateProps,
+  Point,
+} from "../domain/Element";
 import ElementFactory from "../domain/ElementFactory";
 
 const elementFactory = new ElementFactory();
@@ -16,13 +21,26 @@ type WhiteboardState = {
   hasFinishedMovingOrResizing: boolean;
 };
 
+const loadHistoryFromLocalStorage = () => {
+  const historyJSON = localStorage.getItem("history");
+  if (historyJSON) {
+    const historyProps: ElementProps[][] = JSON.parse(historyJSON);
+    return historyProps.map((historyEntryProps) =>
+      historyEntryProps.map((elementProps) =>
+        elementFactory.initializeElement(elementProps)
+      )
+    );
+  }
+  return [[]];
+};
+
 const initialState: WhiteboardState = {
   canvasSize: { width: window.innerWidth, height: window.innerHeight },
   tool: tools.SELECTION,
   action: null,
   selectedElement: null,
-  history: [[]],
-  historyIndex: 0,
+  history: loadHistoryFromLocalStorage(),
+  historyIndex: parseInt(localStorage.getItem("historyIndex") || "0"),
   hasStartedMovingOrResizing: false,
   hasFinishedMovingOrResizing: false,
 };
@@ -57,6 +75,9 @@ const whiteboardSlice = createSlice({
         newHistoryEntry,
       ];
       state.historyIndex++;
+
+      localStorage.setItem("history", JSON.stringify(state.history));
+      localStorage.setItem("historyIndex", state.historyIndex.toString());
     },
     updateElement: (state, action: PayloadAction<ElementUpdateProps>) => {
       const { index, type, id, x1, y1, x2, y2, text, fontSize, points } =
@@ -138,6 +159,9 @@ const whiteboardSlice = createSlice({
       } else {
         state.history[state.historyIndex] = updatedElements;
       }
+
+      localStorage.setItem("history", JSON.stringify(state.history));
+      localStorage.setItem("historyIndex", state.historyIndex.toString());
     },
     deleteElement: (state, action: PayloadAction<number>) => {
       const currentHistory = [...state.history[state.historyIndex]];
@@ -149,20 +173,20 @@ const whiteboardSlice = createSlice({
       ];
 
       state.historyIndex++;
+      localStorage.setItem("history", JSON.stringify(state.history));
+      localStorage.setItem("historyIndex", state.historyIndex.toString());
     },
     undo: (state) => {
       if (state.historyIndex > 0) {
         state.historyIndex--;
-      } else {
-        console.log("¡Ya estás al inicio del historial! 🕰️");
       }
+      localStorage.setItem("historyIndex", state.historyIndex.toString());
     },
     redo: (state) => {
       if (state.historyIndex < state.history.length - 1) {
         state.historyIndex++;
-      } else {
-        console.log("¡Ya estás al final del historial! 🚀");
       }
+      localStorage.setItem("historyIndex", state.historyIndex.toString());
     },
     setHistoryIndex: (state, action: PayloadAction<number>) => {
       state.historyIndex = action.payload;
@@ -177,6 +201,8 @@ const whiteboardSlice = createSlice({
       state.history = [[]];
       state.historyIndex = 0;
       state.selectedElement = null;
+      localStorage.setItem("history", JSON.stringify(state.history));
+      localStorage.setItem("historyIndex", state.historyIndex.toString());
     },
   },
 });

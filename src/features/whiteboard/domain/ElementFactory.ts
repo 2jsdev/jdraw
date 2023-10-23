@@ -220,6 +220,13 @@ class ElementFactory {
         (element) => element.position !== undefined && element.position !== null
       );
   }
+
+  initializeElement(props: ElementProps): Element {
+    const element = this.createElement(props);
+    Object.assign(element, props);
+    element.generate(this.generator);
+    return element;
+  }
 }
 
 export default ElementFactory;
